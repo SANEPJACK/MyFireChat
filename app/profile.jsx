@@ -1,7 +1,20 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 import { useAuth } from '@/providers/auth-provider';
 
@@ -33,7 +46,7 @@ export default function ProfileScreen() {
   const pickImage = async (setUri) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('ต้องการสิทธิ์เข้าถึงรูปภาพ');
+      Alert.alert('กรุณาอนุญาตเข้าถึงคลังภาพ');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -58,9 +71,9 @@ export default function ProfileScreen() {
         avatar,
         cover
       );
-      Alert.alert('บันทึกแล้ว');
+      Alert.alert('บันทึกโปรไฟล์แล้ว');
     } catch (err) {
-      Alert.alert('บันทึกไม่สำเร็จ', err.message);
+      Alert.alert('บันทึกโปรไฟล์ไม่สำเร็จ', err.message);
     } finally {
       setLoading(false);
     }
@@ -68,54 +81,68 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>โปรไฟล์ของฉัน</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="ชื่อที่แสดง (ID)"
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="ชื่อ-นามสกุล"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="อายุ"
-          keyboardType="number-pad"
-          value={age}
-          onChangeText={setAge}
-        />
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          placeholder="คำอธิบายตัวเอง"
-          multiline
-          value={bio}
-          onChangeText={setBio}
-        />
-        <View style={styles.imageRow}>
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text>รูปโปรไฟล์</Text>
-            {avatar ? <Image source={{ uri: avatar }} style={styles.avatar} /> : null}
-            <Text style={styles.link} onPress={() => pickImage(setAvatar)}>
-              เลือกรูป
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            contentInsetAdjustmentBehavior="automatic">
+            <Text style={styles.title}>โปรไฟล์ของฉัน</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ชื่อผู้ใช้ (ID)"
+              value={displayName}
+              onChangeText={setDisplayName}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="ชื่อ-นามสกุล"
+              value={fullName}
+              onChangeText={setFullName}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="อายุ"
+              keyboardType="number-pad"
+              value={age}
+              onChangeText={setAge}
+              returnKeyType="next"
+            />
+            <TextInput
+              style={[styles.input, { height: 100 }]}
+              placeholder="เกี่ยวกับฉัน"
+              multiline
+              value={bio}
+              onChangeText={setBio}
+              returnKeyType="default"
+            />
+            <View style={styles.imageRow}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text>อวาตาร์</Text>
+                {avatar ? <Image source={{ uri: avatar }} style={styles.avatar} /> : null}
+                <Text style={styles.link} onPress={() => pickImage(setAvatar)}>
+                  เลือกอวาตาร์
+                </Text>
+              </View>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text>ภาพปก</Text>
+                {cover ? <Image source={{ uri: cover }} style={styles.cover} /> : null}
+                <Text style={styles.link} onPress={() => pickImage(setCover)}>
+                  เลือกรูปปก
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.button} onPress={handleSave}>
+              {loading ? 'กำลังบันทึก...' : 'บันทึก'}
             </Text>
-          </View>
-          <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text>ภาพหน้าปก</Text>
-            {cover ? <Image source={{ uri: cover }} style={styles.cover} /> : null}
-            <Text style={styles.link} onPress={() => pickImage(setCover)}>
-              เลือกภาพหน้าปก
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.button} onPress={handleSave}>
-          {loading ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
-        </Text>
-      </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

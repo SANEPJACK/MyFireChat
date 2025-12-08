@@ -1,6 +1,17 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 import { useAuth } from '@/providers/auth-provider';
 
@@ -17,31 +28,41 @@ export default function ForgotPasswordScreen() {
     try {
       setLoading(true);
       await resetPassword(email);
-      Alert.alert('ส่งลิงก์รีเซ็ตแล้ว', 'โปรดตรวจสอบอีเมลของคุณ');
+      Alert.alert('ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว', 'โปรดตรวจสอบอีเมลของคุณ');
     } catch (err) {
-      Alert.alert('ไม่สามารถส่งลิงก์รีเซ็ต', err.message);
+      Alert.alert('รีเซ็ตรหัสผ่านไม่สำเร็จ', err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>ลืมรหัสผ่าน</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="อีเมล"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <Text style={styles.button} onPress={handleReset}>
-        {loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ต'}
-      </Text>
-      <View style={{ marginTop: 12 }}>
-        <Link href="/login">กลับไปหน้าเข้าสู่ระบบ</Link>
-      </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.title}>รีเซ็ตรหัสผ่าน</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="อีเมล"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              returnKeyType="done"
+            />
+            <Text style={styles.button} onPress={handleReset}>
+              {loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ต'}
+            </Text>
+            <View style={{ marginTop: 12 }}>
+              <Link href="/login">กลับไปเข้าสู่ระบบ</Link>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

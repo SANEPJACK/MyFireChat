@@ -3,11 +3,15 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 
@@ -31,44 +35,55 @@ export default function LoginScreen() {
       await signIn(email, password);
       router.replace('/chat');
     } catch (err) {
-      Alert.alert('ล็อกอินไม่สำเร็จ', err.message);
+      Alert.alert('เข้าสู่ระบบไม่สำเร็จ', err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>เข้าสู่ระบบ</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="อีเมล"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <View style={styles.passwordRow}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="รหัสผ่าน"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
-          <Text style={{ color: '#0a7ea4' }}>{showPassword ? 'ซ่อน' : 'แสดง'}</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={{ height: 16 }} />
-      <Text style={styles.button} onPress={handleLogin}>
-        {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-      </Text>
-      {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
-      <View style={styles.links}>
-        <Link href="/signup">สมัครสมาชิก</Link>
-        <Link href="/forgot-password">ลืมรหัสผ่าน?</Link>
-      </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.title}>เข้าสู่ระบบ</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="อีเมล"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              returnKeyType="next"
+            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="รหัสผ่าน"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                returnKeyType="done"
+              />
+              <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
+                <Text style={{ color: '#0a7ea4' }}>{showPassword ? 'ซ่อน' : 'แสดง'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ height: 16 }} />
+            <Text style={styles.button} onPress={handleLogin}>
+              {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+            </Text>
+            {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
+            <View style={styles.links}>
+              <Link href="/signup">สมัครสมาชิก</Link>
+              <Link href="/forgot-password">ลืมรหัสผ่าน?</Link>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

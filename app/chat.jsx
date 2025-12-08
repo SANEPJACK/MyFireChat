@@ -8,16 +8,24 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useNavigation, useRouter } from 'expo-router';
 
 import { useAuth } from '@/providers/auth-provider';
 import { supabase } from '@/lib/supabase';
 
 export default function ChatScreen() {
+  const navigation = useNavigation();
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'FIRECHAT',
+      headerTitleAlign: 'center',
+    });
+  }, [navigation]);
 
   useEffect(() => {
     if (!user) return;
@@ -45,8 +53,9 @@ export default function ChatScreen() {
         .from('profiles')
         .select('id, display_name, avatar_url')
         .in('id', otherIds);
-      const mapped = otherIds
-        .map((id) => profilesData?.find((p) => p.id === id) || { id, display_name: 'เพื่อน' });
+      const mapped = otherIds.map(
+        (id) => profilesData?.find((p) => p.id === id) || { id, display_name: 'ไม่ทราบชื่อ' }
+      );
       if (mounted) {
         setFriends(mapped);
         setLoadingFriends(false);
@@ -77,21 +86,21 @@ export default function ChatScreen() {
             </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{profile?.display_name || 'เพื่อนๆ'}</Text>
+            <Text style={styles.title}>{profile?.display_name || 'ผู้ใช้ใหม่'}</Text>
             <Text style={styles.subtitle}>{profile?.full_name || user.email}</Text>
           </View>
           <View style={styles.actions}>
             <TouchableOpacity onPress={() => router.push('/friend-requests')}>
-              <Text style={styles.iconButton}>🤝</Text>
+              <Text style={styles.iconButton}>คำขอ</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/add-friend')}>
-              <Text style={styles.iconButton}>➕</Text>
+              <Text style={styles.iconButton}>+</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/profile')}>
-              <Text style={styles.iconButton}>⚙️</Text>
+              <Text style={styles.iconButton}>โปร</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={signOut}>
-              <Text style={styles.iconButton}>🚪</Text>
+              <Text style={styles.iconButton}>ออก</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -99,11 +108,11 @@ export default function ChatScreen() {
 
       <View style={styles.body}>
         <View style={styles.chatListContainer}>
-          <Text style={styles.sectionTitle}>แชท</Text>
+          <Text style={styles.sectionTitle}>เพื่อน</Text>
           {loadingFriends ? (
-            <Text style={{ color: '#6b7280' }}>กำลังโหลดรายชื่อเพื่อน...</Text>
+            <Text style={{ color: '#6b7280' }}>กำลังโหลดเพื่อน...</Text>
           ) : friends.length === 0 ? (
-            <Text style={{ color: '#6b7280' }}>ยังไม่มีเพื่อน กด ➕ เพื่อเพิ่ม</Text>
+            <Text style={{ color: '#6b7280' }}>ยังไม่มีเพื่อน กด + เพื่อเพิ่ม</Text>
           ) : (
             <FlatList
               data={friends}
@@ -118,15 +127,14 @@ export default function ChatScreen() {
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.friendName}>{item.display_name || 'เพื่อน'}</Text>
-                    <Text style={styles.friendStatus}>แตะเพื่อเริ่มแชท</Text>
+                    <Text style={styles.friendName}>{item.display_name || 'ไม่ทราบชื่อ'}</Text>
+                    <Text style={styles.friendStatus}>แตะเพื่อเริ่มคุย</Text>
                   </View>
                 </TouchableOpacity>
               )}
             />
           )}
         </View>
-
       </View>
     </SafeAreaView>
   );
@@ -196,8 +204,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
   },
-  chatContainer: {
-  },
+  chatContainer: {},
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -254,6 +261,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconButton: {
-    fontSize: 18,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0b132b',
   },
 });

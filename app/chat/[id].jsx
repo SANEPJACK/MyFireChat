@@ -1,24 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '@/providers/auth-provider';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/providers/auth-provider';
 
 export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const { user, profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const [friendProfile, setFriendProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
@@ -80,6 +86,10 @@ export default function ChatDetailScreen() {
     };
   }, [user, roomId]);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   if (!user) {
     return <Redirect href="/login" />;
   }
@@ -104,88 +114,60 @@ export default function ChatDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>{'‹'}</Text>
-        </TouchableOpacity>
-        <View style={styles.headerInfo}>
-          <View style={styles.avatar}>
-            {friendProfile?.avatar_url ? (
-              <Image source={{ uri: friendProfile.avatar_url }} style={styles.avatarImg} />
-            ) : (
-              <Text style={styles.avatarText}>
-                {(friendProfile?.display_name || 'F').slice(0, 1).toUpperCase()}
-              </Text>
-            )}
-          </View>
-          <View>
-            <Text style={styles.name}>{friendProfile?.display_name || 'เพื่อน'}</Text>
-            <Text style={styles.sub}>{friendProfile?.full_name || friendProfile?.email}</Text>
-          </View>
-        </View>
-      </View>
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={{ flex: 1 }}>
+            <FlatList
+              data={messages}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ padding: 12, paddingBottom: 120 }}
+              style={{ flex: 1 }}
+              inverted
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.messageRow,
+                    item.user_id === user.id ? styles.messageMine : styles.messageFriend,
+                  ]}>
+                  <Text style={styles.messageAuthor}>{item.display_name || 'ไม่ทราบชื่อ'}</Text>
+                  <Text style={styles.messageText}>{item.text}</Text>
+                </View>
+              )}
+            />
 
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 12 }}
-        inverted
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.messageRow,
-              item.user_id === user.id ? styles.messageMine : styles.messageFriend,
-            ]}>
-            <Text style={styles.messageAuthor}>{item.display_name || 'ไม่ระบุ'}</Text>
-            <Text style={styles.messageText}>{item.text}</Text>
+            <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+              <TextInput
+                style={styles.input}
+                placeholder="พิมพ์ข้อความ..."
+                value={message}
+                onChangeText={setMessage}
+                returnKeyType="send"
+                onSubmitEditing={sending ? undefined : handleSend}
+              />
+              <TouchableOpacity
+                onPress={sending ? undefined : handleSend}
+                style={styles.sendButton}
+                disabled={sending}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>
+                  {sending ? '...' : 'ส่ง'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-      />
-
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="พิมพ์ข้อความ..."
-          value={message}
-          onChangeText={setMessage}
-        />
-        <TouchableOpacity
-          onPress={sending ? undefined : handleSend}
-          style={styles.sendButton}
-          disabled={sending}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>{sending ? '...' : 'ส่ง'}</Text>
-        </TouchableOpacity>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: '#e5e7eb',
-    gap: 10,
-  },
-  back: { fontSize: 24, color: '#0a7ea4', paddingHorizontal: 4 },
-  headerInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#e0f2fe',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontWeight: '800', color: '#0a7ea4' },
-  avatarImg: { width: 44, height: 44, borderRadius: 22 },
-  name: { fontSize: 16, fontWeight: '800', color: '#0b132b' },
-  sub: { color: '#6b7280', fontSize: 13 },
   messageRow: {
     borderRadius: 16,
     padding: 12,
@@ -197,7 +179,8 @@ const styles = StyleSheet.create({
   messageText: { fontSize: 16 },
   inputRow: {
     flexDirection: 'row',
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
     gap: 8,

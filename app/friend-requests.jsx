@@ -23,7 +23,7 @@ export default function FriendRequestsScreen() {
         .eq('to_user_id', user.id)
         .eq('status', 'pending');
       if (error) {
-        Alert.alert('โหลดคำขอไม่สำเร็จ', error.message);
+        Alert.alert('โหลดคำขอเพื่อนไม่สำเร็จ', error.message);
         setLoading(false);
         return;
       }
@@ -64,7 +64,7 @@ export default function FriendRequestsScreen() {
       .eq('id', requestId)
       .eq('to_user_id', user.id);
     if (error) {
-      Alert.alert('อัปเดตไม่สำเร็จ', error.message);
+      Alert.alert('อัปเดตคำขอไม่สำเร็จ', error.message);
       return;
     }
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
@@ -74,14 +74,14 @@ export default function FriendRequestsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>‹ กลับ</Text>
+          <Text style={styles.back}>{'< กลับ'}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>คำขอเป็นเพื่อน</Text>
       </View>
       {loading ? (
         <Text style={styles.info}>กำลังโหลด...</Text>
       ) : requests.length === 0 ? (
-        <Text style={styles.info}>ยังไม่มีคำขอค้างอยู่</Text>
+        <Text style={styles.info}>ยังไม่มีคำขอ</Text>
       ) : (
         <FlatList
           data={requests}
@@ -90,7 +90,7 @@ export default function FriendRequestsScreen() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.name}>
-                {item.from_profile?.display_name || item.from_profile?.full_name || 'เพื่อนใหม่'}
+                {item.from_profile?.display_name || item.from_profile?.full_name || 'ไม่ทราบชื่อ'}
               </Text>
               <View style={styles.actions}>
                 <TouchableOpacity

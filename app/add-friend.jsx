@@ -2,11 +2,15 @@ import { useState } from 'react';
 import {
   Alert,
   FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { Redirect } from 'expo-router';
@@ -27,7 +31,7 @@ export default function AddFriendScreen() {
   const handleSearch = async () => {
     const term = searchTerm.trim();
     if (term.length < 2) {
-      Alert.alert('กรุณาพิมพ์อย่างน้อย 2 ตัวอักษร');
+      Alert.alert('พิมพ์อย่างน้อย 2 ตัวอักษร');
       return;
     }
     try {
@@ -51,52 +55,67 @@ export default function AddFriendScreen() {
     try {
       setSearching(true);
       await sendFriendRequest(toUserId);
-      Alert.alert('ส่งคำขอแล้ว', 'รอการตอบรับจากเพื่อน');
+      Alert.alert('ส่งคำขอเพื่อนแล้ว', 'ส่งคำขอเพื่อนเรียบร้อย');
     } catch (err) {
-      Alert.alert('ส่งคำขอไม่สำเร็จ', err.message);
+      Alert.alert('ส่งคำขอเพื่อนไม่สำเร็จ', err.message);
     } finally {
       setSearching(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>ค้นหาเพื่อน</Text>
-      <View style={styles.searchRow}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="ค้นหาด้วยชื่อหรืออีเมล"
-          value={searchTerm}
-          onChangeText={setSearchTerm}
-        />
-        <TouchableOpacity onPress={handleSearch} style={styles.searchButton} disabled={searching}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>{searching ? '...' : 'ค้นหา'}</Text>
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={results}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ gap: 8 }}
-        renderItem={({ item }) => (
-          <View style={styles.resultRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.resultName}>{item.display_name || item.full_name || 'เพื่อน'}</Text>
-              <Text style={styles.resultEmail}>{item.email}</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.title}>ค้นหาเพื่อน</Text>
+            <View style={styles.searchRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="ค้นหาด้วยชื่อหรืออีเมล"
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                returnKeyType="search"
+                onSubmitEditing={handleSearch}
+              />
+              <TouchableOpacity onPress={handleSearch} style={styles.searchButton} disabled={searching}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>{searching ? '...' : 'ค้นหา'}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => handleSendFromResult(item.id)}
-              disabled={searching}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>เพิ่ม</Text>
-            </TouchableOpacity>
+            <FlatList
+              data={results}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ gap: 8 }}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <View style={styles.resultRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.resultName}>
+                      {item.display_name || item.full_name || 'ไม่ทราบชื่อ'}
+                    </Text>
+                    <Text style={styles.resultEmail}>{item.email}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => handleSendFromResult(item.id)}
+                    disabled={searching}>
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>ขอเป็นเพื่อน</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: '#6b7280' }}>
+                  {searching ? 'กำลังค้นหา...' : 'ไม่พบผลลัพธ์'}
+                </Text>
+              }
+            />
           </View>
-        )}
-        ListEmptyComponent={
-          <Text style={{ color: '#6b7280' }}>
-            {searching ? 'กำลังค้นหา...' : 'ยังไม่มีผลลัพธ์'}
-          </Text>
-        }
-      />
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
