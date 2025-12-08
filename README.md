@@ -25,6 +25,45 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Supabase setup (Auth + Database + Storage)
+
+1. สร้าง Supabase project (ใช้ Region ใกล้ผู้ใช้) แล้วคัด `Project URL` และ `anon public key` ใส่ `.env` จาก `.env.example`
+2. เปิด Authentication > Providers > Email แล้วเปิด Email/Password
+3. สร้างตารางใน SQL Editor (ตัวอย่าง schema):
+   ```sql
+   create table profiles (
+     id uuid primary key references auth.users (id) on delete cascade,
+     email text,
+     display_name text,
+     full_name text,
+     bio text,
+     age int,
+     avatar_url text,
+     cover_url text
+   );
+
+   create table messages (
+     id uuid primary key default gen_random_uuid(),
+     room_id text not null,
+     user_id uuid references auth.users (id) on delete cascade,
+     display_name text,
+     text text,
+     created_at timestamp with time zone default now()
+   );
+   create index messages_room_id_created_at_idx on messages (room_id, created_at desc);
+
+   create table friend_requests (
+     id uuid primary key default gen_random_uuid(),
+     from_user_id uuid references auth.users (id) on delete cascade,
+     to_user_id text,
+     status text default 'pending',
+     created_at timestamp with time zone default now()
+   );
+   ```
+4. เปิด Storage แล้วสร้าง bucket ชื่อ `profiles` (Public) ใช้เก็บ avatars/covers
+5. ถ้าไม่ต้องการให้ผู้ใช้ต้องกดยืนยันอีเมล ให้ไปที่ Authentication > Providers > Email แล้วปิด “Confirm email”
+5. รัน `npx expo start -c`
+
 ## Get a fresh project
 
 When you're ready, run:
