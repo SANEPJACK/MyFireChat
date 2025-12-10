@@ -15,11 +15,13 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/providers/auth-provider';
 
 export default function ProfileScreen() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, testStorageConnectivity } = useAuth();
+  const insets = useSafeAreaInsets();
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
   const [bio, setBio] = useState('');
@@ -79,8 +81,26 @@ export default function ProfileScreen() {
     }
   };
 
+
+const Test = async () => {
+    try {
+      setLoading(true);
+      await testStorageConnectivity(
+        {
+         
+        },
+      
+      );
+      Alert.alert('สำเร็จ');
+    } catch (err) {
+      Alert.alert('error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top + 8 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import * as FileSystem from 'expo-file-system/legacy';
 
-import { supabase } from '@/lib/supabase';
+import { supabase, SUPABASE_URL } from '@/lib/supabase';
+import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 const AuthContext = createContext(null);
 
@@ -9,6 +11,8 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pushToken, setPushToken] = useState(null);
+  const [activeChatId, setActiveChatId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -43,6 +47,23 @@ export function AuthProvider({ children }) {
       subscription?.subscription?.unsubscribe();
     };
   }, []);
+
+  // ลงทะเบียน push token เมื่อมี user
+  useEffect(() => {
+    const ensurePushToken = async () => {
+      if (!user) {
+        setPushToken(null);
+        return;
+      }
+      const token = await registerForPushNotificationsAsync();
+      if (token && token !== pushToken) {
+        setPushToken(token);
+        // บันทึกลงโปรไฟล์ (ต้องมีคอลัมน์ push_token ในตาราง profiles)
+        await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
+      }
+    };
+    ensurePushToken();
+  }, [user, pushToken]);
 
   const loadProfile = async (userObj) => {
     const userId = userObj?.id;
@@ -81,27 +102,13 @@ export function AuthProvider({ children }) {
     setProfile(data);
   };
 
-  const uploadImage = async (uri, path) => {
+  const uriToBase64DataUrl = async (uri) => {
     if (!uri) return null;
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const bucket = 'profiles';
-    const { data, error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(path, blob, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: blob.type || 'image/jpeg',
-      });
-    if (uploadError) {
-      console.warn('Upload error', uploadError);
-      throw uploadError;
-    }
-    const { data: publicUrl, error: publicErr } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(data.path);
-    if (publicErr) throw publicErr;
-    return publicUrl.publicUrl;
+    // ถ้าเป็น data URL อยู่แล้ว ไม่ต้องอ่านไฟล์ซ้ำ
+    if (uri.startsWith('data:')) return uri;
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+    const mime = uri?.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return `data:${mime};base64,${base64}`;
   };
 
   const signUp = async ({ email, password, displayName, fullName }) => {
@@ -154,15 +161,16 @@ export function AuthProvider({ children }) {
 
   const updateProfileData = async ({ displayName, fullName, bio, age }, avatarUri, coverUri) => {
     if (!user) throw new Error('ไม่พบผู้ใช้');
-    const avatarUrl = avatarUri ? await uploadImage(avatarUri, `avatars/${user.id}.jpg`) : null;
-    const coverUrl = coverUri ? await uploadImage(coverUri, `covers/${user.id}.jpg`) : null;
+    // เก็บรูปเป็น Base64 data URL เพื่อตัดปัญหา Storage
+    const avatarDataUrl = avatarUri ? await uriToBase64DataUrl(avatarUri) : null;
+    const coverDataUrl = coverUri ? await uriToBase64DataUrl(coverUri) : null;
     const updates = {
       ...(displayName ? { display_name: displayName } : {}),
       ...(fullName ? { full_name: fullName } : {}),
       ...(bio ? { bio } : {}),
       ...(age ? { age } : {}),
-      ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
-      ...(coverUrl ? { cover_url: coverUrl } : {}),
+      ...(avatarDataUrl ? { avatar_url: avatarDataUrl } : {}),
+      ...(coverDataUrl ? { cover_url: coverDataUrl } : {}),
     };
     const { error: profileError } = await supabase
       .from('profiles')
@@ -178,6 +186,35 @@ export function AuthProvider({ children }) {
       });
     }
     await loadProfile(user);
+  };
+
+  // Debug: ตรวจ storage endpoint + token
+  const testStorageConnectivity = async () => {
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+    if (sessionErr || !sessionData?.session?.access_token) {
+      throw new Error('ไม่มี session token สำหรับทดสอบ storage');
+    }
+    const token = sessionData.session.access_token;
+    const url = `${SUPABASE_URL}/storage/v1/object/profiles/test-check.txt`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await res.text().catch(() => '');
+    console.log('Storage probe', res.status, body);
+    return { status: res.status, ok: res.ok, body };
+  };
+
+  // Debug: upload ไฟล์ทดสอบ (text) ไปที่ bucket profiles/avatars
+  const testStorageUpload = async () => {
+    if (!user) throw new Error('ต้องล็อกอินก่อน');
+    const blob = new Blob(['ping'], { type: 'text/plain' });
+    const path = `avatars/${user.id}-test.txt`;
+    const { data, error } = await supabase.storage
+      .from('profiles')
+      .upload(path, blob, { upsert: true, cacheControl: '3600' });
+    if (error) throw error;
+    return data;
   };
 
   const sendFriendRequest = async (friendId) => {
@@ -204,8 +241,13 @@ export function AuthProvider({ children }) {
       resetPassword,
       updateProfile: updateProfileData,
       sendFriendRequest,
+      testStorageConnectivity,
+      testStorageUpload,
+      pushToken,
+      activeChatId,
+      setActiveChatId,
     }),
-    [user, profile, loading, error]
+    [user, profile, loading, error, pushToken, activeChatId]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

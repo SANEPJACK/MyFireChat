@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
 import { useAuth } from '@/providers/auth-provider';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 export default function FriendRequestsScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,57 +75,65 @@ export default function FriendRequestsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>{'< กลับ'}</Text>
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}> 
+      <StatusBar style="dark" backgroundColor="#fff" translucent={false} />
+      <View style={styles.headerBar}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#0a7ea4" />
         </TouchableOpacity>
         <Text style={styles.title}>คำขอเป็นเพื่อน</Text>
+        <View style={styles.iconButton} />
       </View>
-      {loading ? (
-        <Text style={styles.info}>กำลังโหลด...</Text>
-      ) : requests.length === 0 ? (
-        <Text style={styles.info}>ยังไม่มีคำขอ</Text>
-      ) : (
-        <FlatList
-          data={requests}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 12, gap: 10 }}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.name}>
-                {item.from_profile?.display_name || item.from_profile?.full_name || 'ไม่ทราบชื่อ'}
-              </Text>
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={[styles.button, styles.accept]}
-                  onPress={() => handleAction(item.id, 'accepted')}>
-                  <Text style={styles.buttonText}>ยอมรับ</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.decline]}
-                  onPress={() => handleAction(item.id, 'declined')}>
-                  <Text style={styles.buttonText}>ปฏิเสธ</Text>
-                </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: '#f5f6fb' }}>
+        {loading ? (
+          <Text style={styles.info}>กำลังโหลด...</Text>
+        ) : requests.length === 0 ? (
+          <Text style={styles.info}>ยังไม่มีคำขอ</Text>
+        ) : (
+          <FlatList
+            data={requests}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ padding: 12, gap: 10 }}
+            renderItem={({ item }) => (
+              <View style={styles.card}>
+                <Text style={styles.name}>
+                  {item.from_profile?.display_name || item.from_profile?.full_name || 'ไม่ทราบชื่อ'}
+                </Text>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.accept]}
+                    onPress={() => handleAction(item.id, 'accepted')}>
+                    <Text style={styles.buttonText}>ยอมรับ</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.decline]}
+                    onPress={() => handleAction(item.id, 'declined')}>
+                    <Text style={styles.buttonText}>ปฏิเสธ</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
-        />
-      )}
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f6fb' },
-  header: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  headerBar: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderBottomColor: '#e5e7eb',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  back: { color: '#0a7ea4', fontWeight: '700', fontSize: 16 },
-  title: { fontSize: 20, fontWeight: '800', color: '#0b132b' },
+  iconButton: { width: 32, alignItems: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: '#0b132b', textAlign: 'center' },
   info: { paddingHorizontal: 16, color: '#6b7280' },
   card: {
     backgroundColor: '#fff',

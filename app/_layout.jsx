@@ -8,7 +8,13 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerTitle: '', headerBackTitleVisible: false }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          headerTitle: '',
+          headerBackTitleVisible: false,
+        }}
+      />
     </AuthProvider>
   );
 }

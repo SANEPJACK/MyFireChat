@@ -14,12 +14,15 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/providers/auth-provider';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +36,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await signIn(email, password);
-      router.replace('/chat');
+      router.replace('/(tabs)/chat');
     } catch (err) {
       Alert.alert('เข้าสู่ระบบไม่สำเร็จ', err.message);
     } finally {
@@ -48,7 +51,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.container}>
+          <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
             <Text style={styles.title}>เข้าสู่ระบบ</Text>
             <TextInput
               style={styles.input}
@@ -61,7 +64,7 @@ export default function LoginScreen() {
             />
             <View style={styles.passwordRow}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, styles.inputWithIcon]}
                 placeholder="รหัสผ่าน"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -69,7 +72,11 @@ export default function LoginScreen() {
                 returnKeyType="done"
               />
               <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
-                <Text style={{ color: '#0a7ea4' }}>{showPassword ? 'ซ่อน' : 'แสดง'}</Text>
+                <Ionicons
+                  name={showPassword ? 'eye-off-sharp' : 'eye-outline'}
+                  size={20}
+                  color="#0a7ea4"
+                />
               </TouchableOpacity>
             </View>
             <View style={{ height: 16 }} />
@@ -96,13 +103,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    position: 'relative',
   },
   eyeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -10 }],
   },
   title: {
     fontSize: 28,
@@ -116,6 +123,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
+  },
+  inputWithIcon: {
+    paddingRight: 40,
   },
   button: {
     backgroundColor: '#0a7ea4',

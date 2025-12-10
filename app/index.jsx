@@ -15,7 +15,7 @@ export default function Index() {
   }
 
   if (user) {
-    return <Redirect href="/chat" />;
+    return <Redirect href="/(tabs)/chat" />;
   }
 
   return <Redirect href="/login" />;

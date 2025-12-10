@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useCallback } from 'react';
 import {
   Alert,
   FlatList,
@@ -15,6 +15,9 @@ import {
 } from 'react-native';
 import { Redirect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/auth-provider';
@@ -23,7 +26,7 @@ export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const navigation = useNavigation();
-  const { user, profile } = useAuth();
+  const { user, profile, setActiveChatId } = useAuth();
   const insets = useSafeAreaInsets();
   const [friendProfile, setFriendProfile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -90,6 +93,14 @@ export default function ChatDetailScreen() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  // ตั้ง active chat เพื่อใช้ตัดแจ้งเตือน (ให้ backend เช็กได้)
+  useFocusEffect(
+    useCallback(() => {
+      if (roomId) setActiveChatId(roomId);
+      return () => setActiveChatId(null);
+    }, [roomId, setActiveChatId])
+  );
+
   if (!user) {
     return <Redirect href="/login" />;
   }
@@ -121,6 +132,33 @@ export default function ChatDetailScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{ flex: 1 }}>
+            <View style={styles.headerBar}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+                <Ionicons name="chevron-back" size={26} color="#0a7ea4" />
+              </TouchableOpacity>
+              <View style={styles.headerInfo}>
+                {friendProfile?.avatar_url ? (
+                  <Image source={{ uri: friendProfile.avatar_url }} style={styles.avatarImage} />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {friendProfile?.display_name?.[0]?.toUpperCase() ||
+                        friendProfile?.full_name?.[0]?.toUpperCase() ||
+                        '?'}
+                    </Text>
+                  </View>
+                )}
+                <View>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {friendProfile?.display_name || friendProfile?.full_name || 'เพื่อน'}
+                  </Text>
+                  <Text style={styles.subName} numberOfLines={1}>
+                    {friendProfile?.full_name || friendProfile?.display_name || ''}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.iconButton} />
+            </View>
             <FlatList
               data={messages}
               keyExtractor={(item) => item.id}
@@ -168,6 +206,35 @@ export default function ChatDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  headerBar: {
+    height: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#e5e7eb',
+  },
+  iconButton: { width: 36, alignItems: 'flex-start' },
+  headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e5e7eb',
+  },
+  avatarText: { fontWeight: '800', color: '#0b132b' },
+  name: { fontSize: 16, fontWeight: '800', color: '#0b132b', maxWidth: 180 },
+  subName: { color: '#6b7280', fontSize: 12, maxWidth: 180 },
   messageRow: {
     borderRadius: 16,
     padding: 12,

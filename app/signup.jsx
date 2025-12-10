@@ -14,12 +14,15 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/providers/auth-provider';
 
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const insets = useSafeAreaInsets();
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -40,7 +43,7 @@ export default function SignupScreen() {
         router.replace('/login');
         return;
       }
-      router.replace('/chat');
+      router.replace('/(tabs)/chat');
     } catch (err) {
       Alert.alert('สมัครสมาชิกไม่สำเร็จ', err.message);
     } finally {
@@ -56,7 +59,7 @@ export default function SignupScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
-            contentContainerStyle={styles.container}
+            contentContainerStyle={[styles.container, { paddingTop: insets.top + 12 }]}
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="automatic">
             <Text style={styles.title}>สมัครสมาชิก</Text>
@@ -85,7 +88,7 @@ export default function SignupScreen() {
             />
             <View style={styles.passwordRow}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, styles.inputWithIcon]}
                 placeholder="รหัสผ่าน"
                 secureTextEntry={!showPassword}
                 value={password}
@@ -93,7 +96,11 @@ export default function SignupScreen() {
                 returnKeyType="done"
               />
               <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeButton}>
-                <Text style={{ color: '#0a7ea4' }}>{showPassword ? 'ซ่อน' : 'แสดง'}</Text>
+                <Ionicons
+                  name={showPassword ? 'eye-off-sharp' : 'eye-outline'}
+                  size={20}
+                  color="#0a7ea4"
+                />
               </TouchableOpacity>
             </View>
             <View style={{ height: 16 }} />
@@ -112,7 +119,7 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    paddingHorizontal: 20,
     gap: 10,
   },
   title: {
@@ -142,12 +149,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    position: 'relative',
   },
   eyeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+  },
+  inputWithIcon: {
+    paddingRight: 40,
   },
 });
