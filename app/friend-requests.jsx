@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +15,9 @@ export default function FriendRequestsScreen() {
   const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  const loadRequests = async () => {
     if (!user) return;
     let active = true;
 
@@ -55,6 +57,10 @@ export default function FriendRequestsScreen() {
     return () => {
       active = false;
     };
+  };
+
+  useEffect(() => {
+    loadRequests();
   }, [user]);
 
   if (!user) {
@@ -76,10 +82,10 @@ export default function FriendRequestsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}> 
-      <StatusBar style="dark" backgroundColor="#fff" translucent={false} />
+      <StatusBar style="light" backgroundColor="#e53935" translucent={false} />
       <View style={styles.headerBar}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#0a7ea4" />
+          <Ionicons name="chevron-back" size={24} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.title}>คำขอเป็นเพื่อน</Text>
         <View style={styles.iconButton} />
@@ -94,6 +100,13 @@ export default function FriendRequestsScreen() {
             data={requests}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ padding: 12, gap: 10 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={async () => {
+                setRefreshing(true);
+                await loadRequests();
+                setRefreshing(false);
+              }} />
+            }
             renderItem={({ item }) => (
               <View style={styles.card}>
                 <Text style={styles.name}>
@@ -121,19 +134,19 @@ export default function FriendRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#e53935' },
   headerBar: {
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#e53935',
+    borderBottomColor: '#c62828',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   iconButton: { width: 32, alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: '800', color: '#0b132b', textAlign: 'center' },
+  title: { fontSize: 18, fontWeight: '800', color: '#ffffff', textAlign: 'center' },
   info: { paddingHorizontal: 16, color: '#6b7280' },
   card: {
     backgroundColor: '#fff',

@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { AppState } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
@@ -48,22 +49,42 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // ลงทะเบียน push token เมื่อมี user
-  useEffect(() => {
-    const ensurePushToken = async () => {
-      if (!user) {
-        setPushToken(null);
-        return;
-      }
-      const token = await registerForPushNotificationsAsync();
-      if (token && token !== pushToken) {
-        setPushToken(token);
-        // บันทึกลงโปรไฟล์ (ต้องมีคอลัมน์ push_token ในตาราง profiles)
-        await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
-      }
-    };
-    ensurePushToken();
+  // ลงทะเบียน push token เมื่อมี user และ refresh ทุกครั้งที่แอป active
+  const refreshPushToken = useCallback(async () => {
+    if (!user) {
+      setPushToken(null);
+      return;
+    }
+    const token = await registerForPushNotificationsAsync();
+    if (token && token !== pushToken) {
+      setPushToken(token);
+      // ลบ token ซ้ำของผู้อื่น/อุปกรณ์อื่น
+      await supabase.from('profiles').update({ push_token: null }).eq('push_token', token);
+      // บันทึกลงโปรไฟล์ปัจจุบัน
+      await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
+    }
   }, [user, pushToken]);
+
+  useEffect(() => {
+    if (!user) return;
+    // เรียกครั้งแรกเมื่อมี user
+    refreshPushToken();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        refreshPushToken();
+      } else if (state === 'background') {
+        // ปิด active room เมื่อออกไปเบื้องหลัง เพื่อให้ตัวเองยังได้รับแจ้งเตือน
+        (async () => {
+          try {
+            await supabase.rpc('set_active_room', { room_id: null });
+          } catch (_) {
+            // ignore
+          }
+        })();
+      }
+    });
+    return () => sub.remove();
+  }, [user, refreshPushToken]);
 
   const loadProfile = async (userObj) => {
     const userId = userObj?.id;
@@ -148,7 +169,22 @@ export function AuthProvider({ children }) {
 
   const signOutUser = async () => {
     setError(null);
-    await supabase.auth.signOut();
+    try {
+      // เคลียร์ active room และ push token ก่อนออกจากระบบ
+      await supabase.rpc('set_active_room', { room_id: null }).catch(() => {});
+      if (user) {
+        await supabase.from('profiles').update({ push_token: null }).eq('id', user.id);
+      }
+      await supabase.auth.signOut();
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setActiveChatId(null);
+      setPushToken(null);
+    }
   };
 
   const resetPassword = async (email) => {

@@ -1,9 +1,8 @@
-## เปิด Realtime สำหรับ Supabase
+## คำสั่ง
 
-1) Dashboard > Realtime (เมนูด้านซ้ายใต้ Database)
-2) เปิด Realtime แล้วเลือกตารางที่ต้องการรับ event:
-   - `messages`
-   - `friend_requests`
-3) กดบันทึก
+1) npx expo start -c 
+2) eas build -p android --profile apk
+3) eas build -p android --profile production
+4) eas build -p ios --profile production
+4) adb logcat -T 1 AndroidRuntime:E *:S
 
-หลังเปิดแล้ว รีสตาร์ทแอป (npx expo start -c) แล้วลองส่งข้อความ/ส่งคำขอเพื่อน

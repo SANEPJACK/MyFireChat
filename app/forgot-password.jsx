@@ -48,6 +48,7 @@ export default function ForgotPasswordScreen() {
             <TextInput
               style={styles.input}
               placeholder="อีเมล"
+              placeholderTextColor="#9ca3af"
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -58,7 +59,9 @@ export default function ForgotPasswordScreen() {
               {loading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ต'}
             </Text>
             <View style={{ marginTop: 12 }}>
-              <Link href="/login">กลับไปเข้าสู่ระบบ</Link>
+              <Link href="/login" style={{ color: '#e53935', fontWeight: '700' }}>
+                กลับไปเข้าสู่ระบบ
+              </Link>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -78,6 +81,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
+    color: '#e53935',
   },
   input: {
     borderWidth: 1,
@@ -85,9 +89,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
+    color: '#111827',
   },
   button: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     color: '#fff',
     textAlign: 'center',
     paddingVertical: 14,

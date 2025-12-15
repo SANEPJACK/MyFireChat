@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'react-native';
 
 import { useAuth } from '@/providers/auth-provider';
 
@@ -62,10 +63,12 @@ export default function SignupScreen() {
             contentContainerStyle={[styles.container, { paddingTop: insets.top + 12 }]}
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="automatic">
+            <Image source={require('@/assets/images/FireChat.png')} style={styles.logo} resizeMode="contain" />
             <Text style={styles.title}>สมัครสมาชิก</Text>
             <TextInput
               style={styles.input}
               placeholder="ชื่อผู้ใช้ (ID)"
+              placeholderTextColor="#9ca3af"
               value={displayName}
               onChangeText={setDisplayName}
               returnKeyType="next"
@@ -73,6 +76,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="ชื่อ-นามสกุล"
+              placeholderTextColor="#9ca3af"
               value={fullName}
               onChangeText={setFullName}
               returnKeyType="next"
@@ -80,6 +84,7 @@ export default function SignupScreen() {
             <TextInput
               style={styles.input}
               placeholder="อีเมล"
+              placeholderTextColor="#9ca3af"
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -90,6 +95,7 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, styles.inputWithIcon]}
                 placeholder="รหัสผ่าน"
+                placeholderTextColor="#9ca3af"
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
@@ -99,7 +105,7 @@ export default function SignupScreen() {
                 <Ionicons
                   name={showPassword ? 'eye-off-sharp' : 'eye-outline'}
                   size={20}
-                  color="#0a7ea4"
+                  color="#e53935"
                 />
               </TouchableOpacity>
             </View>
@@ -108,7 +114,9 @@ export default function SignupScreen() {
               {loading ? 'กำลังสมัครสมาชิก...' : 'สมัครสมาชิก'}
             </Text>
             <View style={styles.links}>
-              <Link href="/login">มีบัญชีแล้ว? เข้าสู่ระบบ</Link>
+              <Link href="/login" style={{ color: '#e53935', fontWeight: '700' }}>
+                มีบัญชีแล้ว? เข้าสู่ระบบ
+              </Link>
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -126,6 +134,12 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     textAlign: 'center',
+    color: '#e53935',
+  },
+  logo: {
+    width: '100%',
+    height: 140,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
@@ -133,9 +147,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
+    color: '#111827',
   },
   button: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     color: '#fff',
     textAlign: 'center',
     paddingVertical: 14,

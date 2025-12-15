@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'react-native';
 
 import { useAuth } from '@/providers/auth-provider';
 
@@ -52,10 +53,12 @@ export default function LoginScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
+            <Image source={require('@/assets/images/FireChat.png')} style={styles.logo} resizeMode="contain" />
             <Text style={styles.title}>เข้าสู่ระบบ</Text>
             <TextInput
               style={styles.input}
               placeholder="อีเมล"
+              placeholderTextColor="#9ca3af"
               autoCapitalize="none"
               keyboardType="email-address"
               value={email}
@@ -66,6 +69,7 @@ export default function LoginScreen() {
               <TextInput
                 style={[styles.input, styles.inputWithIcon]}
                 placeholder="รหัสผ่าน"
+                placeholderTextColor="#9ca3af"
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
@@ -75,7 +79,7 @@ export default function LoginScreen() {
                 <Ionicons
                   name={showPassword ? 'eye-off-sharp' : 'eye-outline'}
                   size={20}
-                  color="#0a7ea4"
+                  color="#e53935"
                 />
               </TouchableOpacity>
             </View>
@@ -85,8 +89,12 @@ export default function LoginScreen() {
             </Text>
             {loading && <ActivityIndicator style={{ marginTop: 12 }} />}
             <View style={styles.links}>
-              <Link href="/signup">สมัครสมาชิก</Link>
-              <Link href="/forgot-password">ลืมรหัสผ่าน?</Link>
+              <Link href="/signup" style={{ color: '#e53935', fontWeight: '700' }}>
+                สมัครสมาชิก
+              </Link>
+              <Link href="/forgot-password" style={{ color: '#e53935', fontWeight: '700' }}>
+                ลืมรหัสผ่าน?
+              </Link>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -116,6 +124,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 10,
+    color: '#e53935',
+  },
+  logo: {
+    width: '100%',
+    height: 140,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
@@ -123,12 +137,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
+    color: '#111827',
   },
   inputWithIcon: {
     paddingRight: 40,
   },
   button: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     color: '#fff',
     textAlign: 'center',
     paddingVertical: 14,

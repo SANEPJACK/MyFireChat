@@ -7,7 +7,7 @@ import { AuthProvider } from '@/providers/auth-provider';
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" backgroundColor="#e53935" />
       <Stack
         screenOptions={{
           headerShown: false,

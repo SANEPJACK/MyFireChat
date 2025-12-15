@@ -12,12 +12,13 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  Image,
 } from 'react-native';
 import { Redirect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/auth-provider';
@@ -32,11 +33,28 @@ export default function ChatDetailScreen() {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [markingRead, setMarkingRead] = useState(false);
 
   const roomId = useMemo(() => {
     if (!user || !id) return null;
     return [user.id, id].sort().join(':');
   }, [user, id]);
+
+  const markRoomRead = useCallback(async () => {
+    if (!user || !roomId) return;
+    if (markingRead) return;
+    setMarkingRead(true);
+    try {
+      await supabase.from('room_reads').upsert(
+        { room_id: roomId, user_id: user.id, last_read_at: new Date().toISOString() },
+        { onConflict: 'room_id,user_id' }
+      );
+    } catch (_) {
+      // ignore
+    } finally {
+      setMarkingRead(false);
+    }
+  }, [user, roomId, markingRead]);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -67,6 +85,7 @@ export default function ChatDetailScreen() {
         return;
       }
       if (mounted) setMessages(data || []);
+      await markRoomRead();
     };
 
     loadMessages();
@@ -79,6 +98,8 @@ export default function ChatDetailScreen() {
         (payload) => {
           if (!payload.new) return;
           setMessages((prev) => [{ ...payload.new, id: payload.new.id }, ...prev]);
+          // ถ้าอยู่ในห้องนี้ ให้ mark อ่านทันที
+          markRoomRead();
         }
       )
       .subscribe();
@@ -87,7 +108,7 @@ export default function ChatDetailScreen() {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [user, roomId]);
+  }, [user, roomId, markRoomRead]);
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
@@ -96,9 +117,28 @@ export default function ChatDetailScreen() {
   // ตั้ง active chat เพื่อใช้ตัดแจ้งเตือน (ให้ backend เช็กได้)
   useFocusEffect(
     useCallback(() => {
-      if (roomId) setActiveChatId(roomId);
-      return () => setActiveChatId(null);
-    }, [roomId, setActiveChatId])
+      if (roomId) {
+        setActiveChatId(roomId);
+        (async () => {
+          try {
+            await supabase.rpc('set_active_room', { room_id: roomId });
+            await markRoomRead(); // mark read whenเข้าห้อง
+          } catch (_) {
+            // ignore
+          }
+        })();
+      }
+      return () => {
+        setActiveChatId(null);
+        (async () => {
+          try {
+            await supabase.rpc('set_active_room', { room_id: null });
+          } catch (_) {
+            // ignore
+          }
+        })();
+      };
+    }, [roomId, setActiveChatId, markRoomRead])
   );
 
   if (!user) {
@@ -125,18 +165,22 @@ export default function ChatDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#e53935' }]}>
+      <StatusBar style="light" backgroundColor="#e53935" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: '#fff' }}>
             <View style={styles.headerBar}>
               <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-                <Ionicons name="chevron-back" size={26} color="#0a7ea4" />
+                <Ionicons name="chevron-back" size={26} color="#ffffff" />
               </TouchableOpacity>
-              <View style={styles.headerInfo}>
+              <TouchableOpacity
+                style={styles.headerInfo}
+                activeOpacity={0.7}
+                onPress={() => friendProfile?.id && router.push(`/friend/${friendProfile.id}`)}>
                 {friendProfile?.avatar_url ? (
                   <Image source={{ uri: friendProfile.avatar_url }} style={styles.avatarImage} />
                 ) : (
@@ -156,7 +200,7 @@ export default function ChatDetailScreen() {
                     {friendProfile?.full_name || friendProfile?.display_name || ''}
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
               <View style={styles.iconButton} />
             </View>
             <FlatList
@@ -183,6 +227,7 @@ export default function ChatDetailScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="พิมพ์ข้อความ..."
+                placeholderTextColor="#9ca3af"
                 value={message}
                 onChangeText={setMessage}
                 returnKeyType="send"
@@ -212,9 +257,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#e53935',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#c62828',
   },
   iconButton: { width: 36, alignItems: 'flex-start' },
   headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -233,8 +278,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5e7eb',
   },
   avatarText: { fontWeight: '800', color: '#0b132b' },
-  name: { fontSize: 16, fontWeight: '800', color: '#0b132b', maxWidth: 180 },
-  subName: { color: '#6b7280', fontSize: 12, maxWidth: 180 },
+  name: { fontSize: 16, fontWeight: '800', color: '#ffffff', maxWidth: 180 },
+  subName: { color: '#ffeded', fontSize: 12, maxWidth: 180 },
   messageRow: {
     borderRadius: 16,
     padding: 12,
@@ -264,7 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   sendButton: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 18,

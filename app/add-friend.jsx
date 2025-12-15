@@ -105,17 +105,17 @@ export default function AddFriendScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingTop: insets.top }}>
-      <StatusBar style="dark" backgroundColor="#fff" translucent={false} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#e53935', paddingTop: insets.top }}>
+      <StatusBar style="light" backgroundColor="#e53935" translucent={false} />
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: '#f5f6fb' }}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: '#f5f6fb' }}>
             <View style={styles.headerBar}>
               <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-                <Ionicons name="chevron-back" size={24} color="#0a7ea4" />
+                <Ionicons name="chevron-back" size={24} color="#ffffff" />
               </TouchableOpacity>
               <Text style={styles.title}>ค้นหาเพื่อน</Text>
               <View style={styles.iconButton} />
@@ -125,6 +125,7 @@ export default function AddFriendScreen() {
                 <TextInput
                   style={[styles.input, { flex: 1 }]}
                   placeholder="ค้นหาด้วยชื่อหรืออีเมล"
+                  placeholderTextColor="#9ca3af"
                   value={searchTerm}
                   onChangeText={setSearchTerm}
                   returnKeyType="search"
@@ -197,15 +198,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
     marginHorizontal: -20,
-    backgroundColor: '#fff',
+    backgroundColor: '#e53935',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#c62828',
   },
   iconButton: { width: 40, alignItems: 'center' },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0b132b',
+    color: '#ffffff',
     textAlign: 'center',
     flex: 1,
   },
@@ -215,6 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 14,
     fontSize: 16,
+    color: '#111827',
   },
   button: {
     backgroundColor: '#0a7ea4',
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchButton: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   addButton: {
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#e53935',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
